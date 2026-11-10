@@ -1,0 +1,36 @@
+.class-nav{display:flex;flex-wrap:wrap;gap:.25rem .85rem;padding-bottom:.5rem}
+.class-nav a{color:var(--ink);padding:.45rem .15rem;text-decoration:none;font-weight:700;min-height:2.75rem;border-bottom:2px solid transparent}
+.class-nav a:hover,.class-nav a[aria-current]{border-color:var(--teal);color:var(--teal)}
+.stack{display:grid;gap:.85rem;align-content:start}
+.stack > *{min-width:0}
+.class-actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.class-actions > *{max-width:100%}
+.class-card{display:block;text-decoration:none;color:var(--ink);padding:1rem;border-top:1px solid var(--rule)}
+.class-card:hover{background:var(--soft)}
+.class-card strong{color:var(--teal)}
+.class-section{margin-top:1.2rem}
+.class-field{display:grid;gap:.2rem}
+.class-field label+*{margin-top:0}
+.class-output{white-space:pre-wrap;overflow-wrap:anywhere}
+details>summary{cursor:pointer;font-weight:700;color:var(--teal);padding:.35rem 0}
+.tickets{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.5rem}
+.tickets code{border:1px dashed #668078;padding:.4rem;text-align:center}
+.review-controls{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.class-nav a[href*="teacher"]{margin-left:auto}
+.timer-shell{max-width:64rem;margin-inline:auto}
+.timer-time{font-size:clamp(4rem,19vw,10rem);font-variant-numeric:tabular-nums;color:var(--teal);font-weight:800;line-height:1.02}
+.timer-steps{font-size:clamp(1rem,2.4vw,1.65rem);padding-left:1.5em;margin:.4rem 0 .9rem}
+.timer-steps li+li{margin-top:.35rem}
+.timer-track{display:flex;flex-wrap:wrap;gap:.3rem .8rem;color:var(--muted)}
+.timer-track strong{color:var(--teal)}
+.project-content{font-size:clamp(1.25rem,3vw,2.3rem)}
+@media(max-width:40rem){.review-controls{grid-template-columns:1fr}}
+@media print{
+ body.print-tickets *{visibility:hidden}
+ body.print-tickets #print-tickets,body.print-tickets #print-tickets *{visibility:visible}
+ body.print-tickets #print-tickets{position:absolute;inset:0}
+}
+.timer-prompt{font-size:clamp(1.1rem,2.4vw,1.55rem);margin-block:.25rem .7rem}
+.timer-track .stage-button{font-size:.88rem;min-height:2rem;padding:.3rem .55rem}
+.timer-track .stage-button[aria-current=step]{background:var(--teal);color:white}
+.review-photo{width:100%;max-height:62vh;object-fit:contain;background:var(--soft)}

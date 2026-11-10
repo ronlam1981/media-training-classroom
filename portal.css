@@ -1,0 +1,11 @@
+body:has(meta[name=workshop-portal]){background:#f8f7f0}
+.portal-intro{padding:clamp(1.3rem,5vw,3rem);background:#113c39;color:#fff;border-radius:1rem;border-top:.36rem solid #eab660;margin:1.5rem 0}
+.portal-intro .dek{color:#e7efe9;max-width:54ch}
+.portal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:.75rem}
+.portal-grid a{border:1px solid var(--rule);background:#fffdf8;border-radius:.55rem;padding:.9rem}
+.portal-grid .hint{margin-bottom:0}.portal-grid small{color:var(--muted);display:block;margin-bottom:.2rem}
+.class-nav a{font-size:.92rem;white-space:nowrap}
+.portal-photos{margin:.75rem 0 1.2rem;display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))}
+.portal-photos figure{margin:0}.portal-photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:.4rem}
+.portal-photos figcaption{color:var(--muted);font-size:.9rem}.portal-foot{padding-bottom:2rem}
+@media(max-width:42rem){.class-nav{overflow:auto;flex-wrap:nowrap;max-width:100%;scrollbar-width:thin}}
