@@ -25,6 +25,7 @@ function studentHref(path){
  return path+'?'+new URLSearchParams(pinnedSession?{session:pinnedSession}:{code:legacyCode});
 }
 function courseHref(id=''){
+ if(id==='relay')return studentHref(hostedBase+'/classroom/relay');
  if(!pagesPortal)return studentHref(base+(id?'/'+id:''));
  const query=new URLSearchParams();
  if(id&&id!=='ice')query.set('activity',id);
@@ -177,6 +178,11 @@ function extraMaterials(id){
 }
 async function renderStudent(){
  if(pagesPortal&&Object.hasOwn(oral,route)){
+  if(route==='relay'){
+   main.append(title('四組傳話','A／C 同題，B／D 同題。每組最後一位交一份。'));
+   main.append(link('開啟四組傳話交答 ↗',courseHref('relay'),'class-card'));
+   return;
+  }
   const [heading,context,steps,review]=oral[route];
   main.append(title(heading,context),briefing('現場做法',steps),briefing('分享與點評',review));
   return;
