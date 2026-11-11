@@ -7,13 +7,19 @@ const portalLinks=[
 
 const params=new URLSearchParams(location.search);
 const route=params.get('activity')||'';
+const sessionId=params.get('session');
+const workshopAPI='https://news-writing-workshop-1116.ronlam1981.chatgpt.site/api/classroom/student/';
 const main=document.getElementById('main');
 const nav=document.getElementById('class-nav');
 const captionImages=Object.fromEntries(['大合','1','2','4','3-1'].map((name,i)=>[
  'ABCDE'[i],'https://skhssco.org.mo/wp-content/uploads/2026/09/'+encodeURIComponent(name)+'-1024x768.jpg'
 ]));
 function courseHref(id=''){
- return id==='ice'?'./icebreaker.html':id?'./?'+new URLSearchParams({activity:id}):'./';
+  if(id==='ice')return './icebreaker.html';
+ const query=new URLSearchParams();
+ if(id)query.set('activity',id);
+ if(sessionId)query.set('session',sessionId);
+ return './'+(query.size?'?'+query:'');
 }
 function node(tag,text='',className=''){
  const el=document.createElement(tag);
@@ -116,10 +122,13 @@ for(const [id,label] of portalLinks){
 }
 const lesson=Object.hasOwn(activities,route)?activities[route]:null;
 const oralLesson=Object.hasOwn(oral,route)?oral[route]:null;
+function taskText(id){
+ return id==='relay'?'每組最後一位填寫收到的訊息，按「傳送答案」。':activities[id]?.task;
+}
 if(lesson){
  document.title=lesson.title+'｜傳媒協作力提升';
  main.classList.add('student');
- main.append(title(lesson.title,lesson.task),briefing('題目背景',lesson.context));
+ main.append(title(lesson.title,taskText(route)),briefing('題目背景',lesson.context));
  if(route==='relay')main.append(briefing('傳話規則',relay.pass.join(' ')));
  extraMaterials(route);
  if(route==='summary'){
@@ -135,13 +144,13 @@ if(lesson){
  const [heading,context,steps,review]=oralLesson;
  main.append(title(heading,context),briefing('現場做法',steps),briefing('分享與點評',review));
 }else{
- main.append(title('傳媒協作力提升','學員網站｜可閱讀題目、在本機寫答案，再複製交畀導師。也可用答題紙。'));
+ main.append(title('傳媒協作力提升','學員網站｜閱讀題目，填妥後按「傳送答案」。'));
  const list=node('section','','portal-grid');
  for(const [id,label] of portalLinks.slice(1)){
   const activity=activities[id];
   const item=link('',courseHref(id),'class-card');
   item.append(node('small',activity?(activity.group?'小組練習':'個人練習'):'現場討論'),node('strong',label),
-   node('p',activity?.task??oral[id]?.[1]??'四組各讀一張照片和短稿，討論讀者、證據和新聞價值。','hint'));
+   node('p',taskText(id)??oral[id]?.[1]??'四組各讀一張照片和短稿，討論讀者、證據和新聞價值。','hint'));
   list.append(item);
  }
  main.append(list);
@@ -149,7 +158,7 @@ if(lesson){
 
 function renderAnswer(lesson){
  const form=node('form','','sheet stack');
- form.append(node('h2','寫低答案'),node('p','可複製答案交畀導師。使用答題紙亦可。請勿填寫姓名或可辨認個案嘅資料。','hint'));
+ form.append(node('h2','寫低答案'),node('p','請勿填寫姓名或可辨認個案嘅資料。若連線不穩，可複製答案或用答題紙。','hint'));
  const specs=route==='relay'?lesson.fields.slice(1):lesson.fields;
  const controls=specs.map(([label,spec])=>[label,input(label,Array.isArray(spec)?{choices:spec,required:true}:{max:spec,multi:spec>=150,required:true})]);
  if(lesson.group)controls.unshift(['組別',input('組別',{choices:Array.from({length:4},(_,i)=>relayGroupLabel(i+1,4)),required:true})]);
@@ -160,14 +169,71 @@ function renderAnswer(lesson){
   controls[1][1].wrap.append(count);
   text.addEventListener('input',()=>{count.textContent=(text.value.match(/[\p{L}\p{N}]/gu)?.length??0)+' 字（不計標點及空格）';});
  }
- const copy=node('button','複製答案','primary');copy.type='submit';
+ const send=node('button','傳送答案','primary');send.type='submit';
+ const copy=node('button','複製答案（備用）','secondary');copy.type='button';
  const status=node('p','','hint');status.setAttribute('role','status');
  const result=node('textarea');result.hidden=true;result.readOnly=true;result.rows=8;
  result.setAttribute('aria-label','可手動複製的答案');
- form.append(copy,status,result);
+ form.append(send,copy,status,result);
+ let submitted=false;
+ let pending=false;
+ let draftId;
+ const fields=()=>controls.slice(lesson.group?1:0).map(([,field])=>field.el.value.trim());
+ async function getSession(){
+  const query=new URLSearchParams({activity:route});
+  if(sessionId)query.set('session',sessionId);
+  return workshopRequest('session?'+query);
+ }
+ function updateGroups(session){
+  if(!lesson.group||session.teams===controls[0][1].el.options.length-1)return;
+  const group=controls[0][1].el;
+  const saved=group.value;
+  const previousIndex=group.selectedIndex;
+  group.replaceChildren(new Option('請選擇',''),...Array.from({length:session.teams},(_,i)=>new Option(relayGroupLabel(i+1,session.teams),String(i+1))));
+  group.selectedIndex=saved&&previousIndex<=session.teams?previousIndex:0;
+ }
+ const initial=getSession().then(session=>{
+  if(session.id)updateGroups(session);
+  if(!pending&&!submitted&&(!session.id||!session.open))status.textContent='目前暫停收答。';
+ }).catch(()=>{
+  if(!pending&&!submitted)status.textContent='暫時未能連到收答服務。可重試傳送，或先複製答案。';
+ });
  form.addEventListener('submit',async event=>{
   event.preventDefault();
-  const answer=[lesson.title,...controls.map(([label,field])=>label+'：'+field.el.value.trim())].join('\n');
+  if(pending||submitted)return;
+  pending=true;
+  send.disabled=true;
+  status.textContent='傳送中…';
+  try{
+   await initial;
+   const session=await getSession();
+   if(!session.id||!session.open)throw Error('目前暫停收答。');
+   const group=lesson.group?Number(controls[0][1].el.selectedIndex):undefined;
+   if(lesson.group&&(group<1||group>session.teams)){
+    updateGroups(session);
+    throw Error('請選擇本組，再傳送答案。');
+   }
+   const payload={session:session.id,activity:route,fields:fields()};
+   if(lesson.group)payload.group=group;
+   else{
+    const key='workshop.answer.v1.'+session.id+'.'+route;
+    if(!draftId){
+     try{
+      draftId=localStorage.getItem(key)||crypto.randomUUID();
+      localStorage.setItem(key,draftId);
+     }catch{draftId=crypto.randomUUID();}
+    }
+    payload.submission=draftId;
+   }
+   const receipt=await workshopRequest('answer',payload);
+   if(!receipt.received)throw Error('未收到收件確認，請重試。');
+   submitted=true;
+   status.textContent=receipt.already?'已經交答，系統保留第一份答案。':'已傳送，導師已收到答案。';
+  }catch(error){status.textContent=error.message;}
+  finally{pending=false;send.disabled=submitted;}
+ });
+ copy.addEventListener('click',async()=>{
+  const answer=[lesson.title,...controls.map(([label,field])=>label+'：'+(label==='組別'?field.el.selectedOptions[0]?.text??'':field.el.value.trim()))].join('\n');
   result.value=answer;
   try{
    await navigator.clipboard.writeText(answer);
@@ -178,4 +244,21 @@ function renderAnswer(lesson){
   }
  });
  main.append(form);
+}
+
+async function workshopRequest(path,payload){
+ let response;
+ try{
+  response=await fetch(workshopAPI+path,{
+   method:payload?'POST':'GET',
+   headers:payload?{'content-type':'application/json'}:{},
+   body:payload?JSON.stringify(payload):undefined,
+   credentials:'omit',
+   cache:'no-store',
+   signal:AbortSignal.timeout(8000)
+  });
+ }catch{throw Error('未能連到收答服務。請重試，或複製答案交畀導師。');}
+ const data=await response.json().catch(()=>null);
+ if(!response.ok||!data)throw Error(data?.error||'未收到收件確認，請重試。');
+ return data;
 }
