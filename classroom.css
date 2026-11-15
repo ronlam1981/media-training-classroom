@@ -34,3 +34,13 @@ details>summary{cursor:pointer;font-weight:700;color:var(--teal);padding:.35rem 
 .timer-track .stage-button{font-size:.88rem;min-height:2rem;padding:.3rem .55rem}
 .timer-track .stage-button[aria-current=step]{background:var(--teal);color:white}
 .review-photo{width:100%;max-height:62vh;object-fit:contain;background:var(--soft)}
+.teacher-timer-frame{width:100%;min-height:370px;border:1px solid var(--rule);border-radius:.5rem;background:var(--paper)}
+.embedded-timer .masthead,.embedded-timer .timer-shell>label,.embedded-timer .timer-shell>h1,.embedded-timer section[aria-label="導師操作"]{display:none}
+.embedded-timer .timer-shell{width:calc(100% - 1.5rem);padding:0.65rem 0}
+.embedded-timer .timer-time{font-size:clamp(2.4rem,9vw,5.3rem)}
+.embedded-timer .timer-prompt{font-size:1rem}
+
+.caption-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:1rem;margin-block:1rem}
+.caption-gallery figure{margin:0}
+.caption-gallery img{display:block;width:100%;height:auto;border-radius:.35rem}
+.caption-gallery figcaption{font-weight:700;color:var(--teal);margin-top:.3rem}
