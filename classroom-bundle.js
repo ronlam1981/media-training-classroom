@@ -702,8 +702,9 @@ function teacherPanel(key,sessions,pinSet){
   const win=window.open('about:blank','classroom-projection');
   if(!win){setStatus(message,'瀏覽器未開啟投影視窗，請允許彈出視窗。',true);return;}
   const doc=win.document;doc.title='課堂點評';
-  const styles=doc.createElement('link');styles.rel='stylesheet';styles.href=location.origin+'/app.css';
-  const classStyles=doc.createElement('link');classStyles.rel='stylesheet';classStyles.href=location.origin+'/classroom.css';
+  const projectionAsset=name=>new URL(pagesPortal&&!sitePortal?'./'+name:'/'+name,location.href).href;
+  const styles=doc.createElement('link');styles.rel='stylesheet';styles.href=projectionAsset('app.css');
+  const classStyles=doc.createElement('link');classStyles.rel='stylesheet';classStyles.href=projectionAsset('classroom.css');
   doc.head.replaceChildren(styles,classStyles);
   const body=node('main','','wrap stack project-content');
   body.append(node('h1',activities[activity].title));
@@ -720,7 +721,7 @@ function teacherPanel(key,sessions,pinSet){
     const suffix=index>=0?'all-'+fields[0].toLowerCase():old[fields[0]];
     if(suffix){
      const image=node('img','','review-photo');
-     image.src=location.origin+'/caption-'+suffix+'.jpg';
+     image.src=projectionAsset('caption-'+suffix+'.jpg');
      image.alt='原稿圖片 '+fields[0];
      source.append(image,node('p','圖片來源：聖公會澳門社會服務處新聞稿','hint'));
     }
