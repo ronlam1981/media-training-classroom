@@ -136,7 +136,9 @@ const pagesPortal=!!document.querySelector('meta[name="workshop-portal"]');
 const hostedBase='https://news-writing-workshop-1116.ronlam1981.chatgpt.site';
 const sitePortal=pagesPortal&&location.origin===hostedBase;
 const portalHome=sitePortal?'/learn':'./';
-const pagesHome='https://ronlam1981.github.io/media-training-classroom/';
+const teacherHome=pagesPortal&&!sitePortal?'./?activity=teacher':base+'/teacher';
+const teacherTool=path=>pagesPortal?hostedBase+path:path;
+const timerPath=pagesPortal?'./timer.html':'/timer';
 const portalLinks=[
  ['','主頁'],['ice','四組破冰'],['angle','揀角度'],['relay','傳話'],
  ['writing','標題與導語'],['summary','100 字濃縮'],['caption','選圖與圖片說明'],
@@ -363,7 +365,7 @@ async function renderStudent(){
  panel.append(status);
  if(!a){
   const teacherLink=node('p','','class-section hint');
-  teacherLink.append(link('導師控制台 ↗',(pagesPortal?hostedBase:'')+base+'/teacher'));
+  teacherLink.append(link('導師控制台 ↗',teacherHome));
   main.append(teacherLink);
  }
  let session;
@@ -467,17 +469,18 @@ async function renderTeacher(){
  const loginStatus=statusLine();
  login.append(keyField.wrap,formButton('開啟控制台'),loginStatus);
  main.append(login);
- let key=sessionStorage.getItem(teacherKey)||'';
+ let key=pagesPortal?'':sessionStorage.getItem(teacherKey)||'';
  login.onsubmit=async e=>{
   e.preventDefault();key=keyField.el.value.trim();await unlock();
  };
  async function unlock(){
   try{
    const {sessions,pinSet}=await api('teacher','sessions',key);
-   sessionStorage.setItem(teacherKey,key);
+   if(!pagesPortal)sessionStorage.setItem(teacherKey,key);
+   keyField.el.value='';
    login.remove();
    teacherPanel(key,sessions,pinSet);
-  }catch(err){sessionStorage.removeItem(teacherKey);setStatus(loginStatus,err.message,true);}
+  }catch(err){if(!pagesPortal)sessionStorage.removeItem(teacherKey);setStatus(loginStatus,err.message,true);}
  }
  if(key)await unlock();
 }
@@ -487,7 +490,7 @@ function teacherPanel(key,sessions,pinSet){
  const selector=input('選擇日期及場次',{choices:[]});
  const exercise=input('選擇練習',{choices:[]});
  for(const [id,a] of Object.entries(activities))exercise.el.append(new Option('P'+a.page+' '+a.title,id));
- const requestedActivity=params.get('activity');
+ const requestedActivity=params.get(pagesPortal?'exercise':'activity');
  exercise.el.value=Object.hasOwn(activities,requestedActivity)?requestedActivity:'writing';
  const pickers=node('div','','review-controls');pickers.append(selector.wrap,exercise.wrap);
  const tally=node('p','請選擇場次。','status');
@@ -500,7 +503,7 @@ function teacherPanel(key,sessions,pinSet){
  const copyLink=button('複製學員場次連結',()=>void copyShare());
  const refresh=button('更新收件',()=>void loadReview());
  const draw=button('隨機抽一份',()=>void drawOne(),true);
- const timerLink=link('開啟活動計時 ↗','/timer');timerLink.target='_blank';timerLink.rel='noopener';
+ const timerLink=link('開啟活動計時 ↗',timerPath);timerLink.target='_blank';timerLink.rel='noopener';
  const actions=node('div','','class-actions');actions.append(toggle,copyLink,refresh,draw,timerLink);
  const testLink=link('以學員身份試交 ↗','');testLink.target='_blank';testLink.rel='noopener';
  const startTest=button('開啟測試場次',()=>void openTest());
@@ -533,7 +536,7 @@ function teacherPanel(key,sessions,pinSet){
  const createButton=formButton('建立場次');
  form.append(date.wrap,label.wrap,learners.wrap,teams.wrap,createButton,createStatus);create.append(form);
  const top=node('div','','class-actions');
- top.append(link('全課程活動計時 ↗','/timer?slide=2'),link('舊標題導語答案 ↗','/legacy/teacher'),link('舊濃縮答案 ↗','/summary/teacher'),button('登出導師控制台',()=>{sessionStorage.removeItem(teacherKey);location.reload();}));
+ top.append(link('全課程活動計時 ↗',timerPath+'?slide=2'),link('舊標題導語答案 ↗',teacherTool('/legacy/teacher')),link('舊濃縮答案 ↗',teacherTool('/summary/teacher')),button('登出導師控制台',()=>{if(!pagesPortal)sessionStorage.removeItem(teacherKey);location.reload();}));
  const pinSettings=node('details','','sheet class-section');
  pinSettings.append(node('summary',pinSet?'更改八位數字密碼':'設定八位數字密碼'));
  const pinForm=node('form','','stack');
@@ -553,7 +556,7 @@ function teacherPanel(key,sessions,pinSet){
   const next=pin.el.value;
   try{
    await api('teacher','pin',key,{pin:next});
-   sessionStorage.setItem(teacherKey,next);
+   if(!pagesPortal)sessionStorage.setItem(teacherKey,next);
    location.reload();
   }catch(err){setStatus(pinStatus,err.message,true);savePin.disabled=false;}
  };
@@ -596,7 +599,9 @@ function teacherPanel(key,sessions,pinSet){
   }catch(err){if(at===requestScope)setStatus(message,err.message,true);}
   finally{resetting=false;updateControls();}
  }
- const shareURL=()=>new URL('?session='+selected.id,location.origin+'/classroom/'+selectedActivity).href;
+ const shareURL=()=>pagesPortal
+  ?new URL('./?'+new URLSearchParams({activity:selectedActivity,session:selected.id}),location.href).href
+  :new URL('?session='+selected.id,location.origin+'/classroom/'+selectedActivity).href;
  let syncRelayAnswers=null;
  function updateControls(){
   for(const b of [toggle,copyLink,refresh,draw])b.disabled=!selected;
@@ -609,7 +614,7 @@ function teacherPanel(key,sessions,pinSet){
   resetAnswers.disabled=resetting||!review?.answers.length;
   resetAnswers.textContent=selected?.is_test?'清除本題測試答案':'清除本題正式答案';
   draw.hidden=selectedActivity==='relay';
-  timerLink.href='/timer?activity='+encodeURIComponent(selectedActivity);
+  timerLink.href=timerPath+'?activity='+encodeURIComponent(selectedActivity);
   toggle.textContent=review?.open?'截止本題':'開放本題';
   if(selected){
    share.replaceChildren(node('span','場次連結　'),link(shareURL(),shareURL()));
@@ -626,7 +631,7 @@ function teacherPanel(key,sessions,pinSet){
   if(selected)sessionStorage.setItem('workshop.teacher.session',selected.id);
   const selectedPlan=activities[selectedActivity];
   exerciseBrief.replaceChildren(node('h2',selectedPlan.title),node('p',selectedPlan.context),node('p',selectedPlan.task));
-  timerFrame.src='/timer?'+new URLSearchParams({activity:selectedActivity,embed:'1'});
+  timerFrame.src=timerPath+'?'+new URLSearchParams({activity:selectedActivity,embed:'1'});
   const groups=selectedPlan.fields[0][1];
   choice.wrap.hidden=selectedActivity==='relay'||!Array.isArray(groups);
   choice.el.replaceChildren(new Option('全部合資格答案',''),...(Array.isArray(groups)?groups.map(g=>new Option(g,g)):[]));

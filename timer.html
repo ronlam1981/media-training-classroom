@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>課堂活動計時｜傳媒協作力提升</title>
+<link rel="stylesheet" href="./app.css"><link rel="stylesheet" href="./classroom.css">
+<script src="./timer-plans.js" defer></script><script src="./interview.js" defer></script>
+</head><body>
+<header class="masthead"><div class="wrap brand"><span>傳媒協作力提升</span><span id="activity-page"></span></div></header>
+<main class="wrap timer-shell stack">
+<label for="timer-picker">切換活動 <select id="timer-picker"></select></label>
+<h1 id="timer-title"></h1>
+<nav id="stages" class="timer-track" aria-label="演練進度"></nav>
+<section class="sheet stack">
+<div><h2 id="phase" aria-live="polite"></h2><p class="timer-time" id="time"></p><p id="cue" role="status" class="status"></p></div>
+<p class="timer-prompt" id="steps"></p>
+<div class="class-actions">
+<button type="button" class="primary" id="start">開始倒數</button>
+<button type="button" class="secondary" id="next">下一階段</button>
+<button type="button" class="secondary" id="reset">重設</button>
+<button type="button" class="secondary" id="fullscreen">全螢幕</button>
+</div>
+</section>
+<section class="brief stack" aria-label="導師操作">
+<p><strong>收集</strong>　<span id="collect"></span></p>
+<p><strong>點評</strong>　<span id="review"></span></p>
+<div id="online-actions" class="class-actions" hidden>
+<a id="teacher-link" target="_blank" rel="noopener">開啟本題收件與抽答 ↗</a>
+<a id="student-link" target="_blank" rel="noopener">學員交答頁 ↗</a>
+</div>
+<p id="online-hint" class="hint" hidden>練習預設開放，收件後可手動截止，再預覽、抽答及投影。</p>
+</section>
+</main></body></html>
