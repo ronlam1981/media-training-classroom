@@ -585,7 +585,7 @@ function teacherPanel(key,sessions,pinSet){
   const at=requestScope;
   let confirm;
   if(mode==='answers'&&!selected.is_test){
-   confirm=window.prompt('將永久清除「'+selected.label+'」的「'+activities[selectedActivity].title+'」全部答案。請輸入「重設」確認。');
+   confirm=window.prompt('將清除控制台內「'+selected.label+'」的「'+activities[selectedActivity].title+'」全部答案。私人 GitHub 備份會保留。請輸入「重設」確認。');
    if(confirm!=='重設')return;
   }
   resetting=true;updateControls();
