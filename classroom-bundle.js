@@ -213,17 +213,34 @@ function setStatus(el,text,error=false){
 function formButton(text){
  const el=node('button',text,'primary');el.type='submit';return el;
 }
-async function api(role,path,key,payload){
+async function api(role,path,key,payload,signal){
  const res=await fetch((pagesPortal?hostedBase:'')+'/api/classroom/'+role+'/'+path,{
   method:payload===undefined?'GET':'POST',
   headers:{...(key?{authorization:'Bearer '+key}:{}),...(payload===undefined?{}:{'content-type':'application/json'})},
   body:payload===undefined?undefined:JSON.stringify(payload),
-  cache:'no-store'
+  cache:'no-store', signal
  });
  const data=await res.json();
  if(!res.ok)throw new Error(data.error||'暫時未能連線。');
  return data;
 }
+
+async function loadStudentSession(){
+ let lastError;
+ for(let attempt=0;attempt<3;attempt++){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  try{return await api('student',currentClass(),undefined,undefined,controller.signal);}
+  catch(error){
+   lastError=error;
+   // Retry only transport failures, never a valid API rejection.
+   if(error.name!=='AbortError'&&!(error instanceof TypeError))throw error;
+  }finally{clearTimeout(timeout);}
+  if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
+ }
+ throw new Error('暫時未能連接收答服務。已自動重試，請按「重新連接收答」再試。');
+}
+
 function title(value,subtitle){
  const intro=node('section','','intro');
  intro.append(node('h1',value),node('p',subtitle,'dek'));
@@ -370,7 +387,9 @@ async function renderStudent(){
  }
  let session;
  try {
-  session=await api('student',currentClass());
+  setStatus(status,'正在連接收答服務…');
+  session=await loadStudentSession();
+  setStatus(status,'');
   if(legacyCode&&session.id){
    legacyCode='';
    pinnedSession=session.id;
@@ -381,7 +400,20 @@ async function renderStudent(){
    }
   }
   sessionLabel.textContent=session.id?session.date+'　'+session.label:'';
- }catch(err){setStatus(status,err.message,true);panel.append(link('返回學員主頁',courseHref()));return;}
+ }catch(err){
+  setStatus(status,err.message,true);
+  const retry=button('重新連接收答',()=>{
+   retry.disabled=true;
+   void renderStudent();
+  },true);
+  panel.append(retry,node('p','題目仍可閱讀。未連接成功前，不代表答案已提交。','hint'));
+  if(pagesPortal&&!sitePortal){
+   const fallback=link('改用原有收答網站 ↗',studentHref(hostedBase+base+(activeId?'/'+activeId:'')));
+   fallback.target='_blank';fallback.rel='noopener noreferrer';
+   panel.append(fallback);
+  }
+  panel.append(link('返回學員主頁',courseHref()));return;
+ }
  if(!a){
   const current=session.active&&activities[session.active];
   panel.prepend(current?link('前往練習：'+current.title,courseHref(session.active)):node('p',session.id?'請從頁眉選擇練習。':'未有課堂場次。請向導師索取場次連結。','subtle'));
