@@ -214,7 +214,7 @@ function formButton(text){
  const el=node('button',text,'primary');el.type='submit';return el;
 }
 async function api(role,path,key,payload,signal){
- const res=await fetch((pagesPortal?hostedBase:'')+'/api/classroom/'+role+'/'+path,{
+ const res=await fetch((pagesPortal?'https://media-training-api-relay.vercel.app':'')+'/api/classroom/'+role+'/'+path,{
   method:payload===undefined?'GET':'POST',
   headers:{...(key?{authorization:'Bearer '+key}:{}),...(payload===undefined?{}:{'content-type':'application/json'})},
   body:payload===undefined?undefined:JSON.stringify(payload),
